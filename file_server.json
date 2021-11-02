@@ -1,0 +1,69 @@
+{
+    "settings": {
+        "key": "Mqv5G7BOoJG0L+Y4wTkANwgl0tLKsRpMMrUuVtFJojZ2XD5pOCOt6QBydVRFkNfj/GUju9zWdZqG8+QRPXbL+g==",
+        "signup": true,
+        "createUserDir": true,
+        "defaults": {
+            "scope": ".",
+            "locale": "en",
+            "viewMode": "list",
+            "singleClick": false,
+            "sorting": {
+                "by": "name",
+                "asc": false
+            },
+            "perm": {
+                "admin": false,
+                "execute": true,
+                "create": true,
+                "rename": true,
+                "modify": true,
+                "delete": true,
+                "share": true,
+                "download": true
+            },
+            "commands": [],
+            "hideDotfiles": true,
+            "dateFormat": true
+        },
+        "authMethod": "json",
+        "branding": {
+            "name": "فایل ها اینجاست",
+            "disableExternal": false,
+            "files": "",
+            "theme": "",
+            "color": ""
+        },
+        "commands": {
+            "after_copy": [],
+            "after_delete": [],
+            "after_rename": [],
+            "after_save": [],
+            "after_upload": [],
+            "before_copy": [],
+            "before_delete": [],
+            "before_rename": [],
+            "before_save": [],
+            "before_upload": []
+        },
+        "shell": [],
+        "rules": []
+    },
+    "server": {
+        "root": "downloads",
+        "baseURL": "",
+        "socket": "",
+        "tlsKey": "",
+        "tlsCert": "",
+        "port": "80",
+        "address": "130.185.121.78",
+        "log": "stdout",
+        "enableThumbnails": true,
+        "resizePreview": true,
+        "enableExec": true,
+        "typeDetectionByHeader": false
+    },
+    "auther": {
+        "recaptcha": null
+    }
+}
