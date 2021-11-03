@@ -19,7 +19,7 @@ client.start(bot_token=token)
 
 
 class Timer:
-    def __init__(self, time_between=2):
+    def __init__(self, time_between=20):
         self.start_time = time.time()
         self.time_between = time_between
 
@@ -30,24 +30,27 @@ class Timer:
         return False
 
 
+current_download = {}
+
+
+
 @client.on(events.NewMessage())
 async def download_or_upload(event):
     type_of = ""
     msg = None
-    timer = Timer()
-
+    name = event.document.attributes[0].file_name
     async def progress_bar(current, total):
-        if timer.can_send():
-            await msg.edit("{} {:.2f}%".format(type_of, current * 100 / total))
-
-    if event.document:
+        current_download[name] = "{:.0f}%".format(current * 100 / total)
+    
+    if event.document and name not in current_download :
         type_of = "download"
-        msg = await event.reply("downloading started")
+        msg = await event.reply("#downloading")
         with open("downloads/" + event.file.name, "wb") as out:
             await download_file(
                 event.client, event.document, out, progress_callback=progress_bar
             )
-        await msg.edit("Finished downloading")
+        await msg.edit("#done")
+    else : await event.reply("already downloading")
 
 
 @client.on(events.NewMessage(pattern="/space"))
@@ -56,6 +59,14 @@ async def get_space(event):
     await event.reply(
         f"free space: {free // (1000**2)} MB | used space: {used  // (1000**2)} MB | total space: {total // (1000**2)} MB "
     )
+
+
+@client.on(events.NewMessage(pattern="/status"))
+async def get_status(event):
+    for file , percent in current_download.items():
+            if percent == '100':
+                current_download.pop(file)
+    await event.respond(''.join(['{0} = {1} \n'.format(k, v) for k,v in current_download.items()]))
 
 
 client.run_until_disconnected()
