@@ -36,21 +36,20 @@ current_download = {}
 
 @client.on(events.NewMessage())
 async def download_or_upload(event):
-    type_of = ""
     msg = None
-    name = event.document.attributes[0].file_name
     async def progress_bar(current, total):
         current_download[name] = "{:.0f}%".format(current * 100 / total)
     
-    if event.document and name not in current_download :
-        type_of = "download"
-        msg = await event.reply("#downloading")
-        with open("downloads/" + event.file.name, "wb") as out:
-            await download_file(
-                event.client, event.document, out, progress_callback=progress_bar
-            )
-        await msg.edit("#done")
-    else : await event.reply("already downloading")
+    if event.document:
+        name = event.document.attributes[0].file_name
+        if name not in current_download:
+            msg = await event.reply("#downloading")
+            with open("downloads/" + event.file.name, "wb") as out:
+                await download_file(
+                    event.client, event.document, out, progress_callback=progress_bar
+                )
+            await msg.edit("#done")
+        else : await event.reply("already downloading")
 
 
 @client.on(events.NewMessage(pattern="/space"))
