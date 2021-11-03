@@ -6,12 +6,13 @@ from telethon.tl import types
 
 from FastTelethon import download_file, upload_file
 import os
+import shutil
 from dotenv import load_dotenv
 
 load_dotenv()
-api_id: int = os.getenv('api_id')
-api_hash: str = os.getenv('api_hash')
-token = os.getenv('token')
+api_id: int = os.getenv("api_id")
+api_hash: str = os.getenv("api_hash")
+token = os.getenv("token")
 client = TelegramClient("bot", api_id, api_hash)
 
 client.start(bot_token=token)
@@ -42,9 +43,19 @@ async def download_or_upload(event):
     if event.document:
         type_of = "download"
         msg = await event.reply("downloading started")
-        with open('downloads/'+event.file.name, "wb") as out:
-            await download_file(event.client, event.document, out, progress_callback=progress_bar)
+        with open("downloads/" + event.file.name, "wb") as out:
+            await download_file(
+                event.client, event.document, out, progress_callback=progress_bar
+            )
         await msg.edit("Finished downloading")
+
+
+@client.on(events.NewMessage(pattern="/space"))
+async def get_space(event):
+    total, used, free = shutil.disk_usage("/")
+    await event.reply(
+        f"free space: {free // (1000**2)} MB | used space: {used  // (1000**2)} MB | total space: {total // (1000**2)} MB "
+    )
 
 
 client.run_until_disconnected()
