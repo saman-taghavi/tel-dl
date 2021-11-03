@@ -63,7 +63,7 @@ async def get_space(event):
 @client.on(events.NewMessage(pattern="/status"))
 async def get_status(event):
     for file , percent in current_download.items():
-            if percent == '100':
+            if percent == '100%':
                 current_download.pop(file)
     await event.respond(''.join(['{0} = {1} \n'.format(k, v) for k,v in current_download.items()]))
 
