@@ -10,8 +10,8 @@ from os import listdir
 from os.path import isfile, join
 import shutil
 from dotenv import load_dotenv
-import bot_replies  
 load_dotenv()
+import bot_replies  
 api_id: int = os.getenv("api_id")
 api_hash: str = os.getenv("api_hash")
 token = os.getenv("token")
@@ -75,6 +75,7 @@ async def get_status(event):
         await event.respond(
             "".join(["{0} = {1} \n".format(k, v) for k, v in current_download.items()])
         )
+
     else:
         await event.respond(bot_replies.download['see files'])
         onlyfiles = [
@@ -89,10 +90,13 @@ async def download_manager(event, name):
         current_download[name] = "{:.0f}%".format(current * 100 / total)
 
     msg = await event.reply("#downloading")
-    with open(download_path + event.file.name, "wb") as out:
-        await download_file(
-            event.client, event.document, out, progress_callback=progress_bar
-        )
+    # with open(download_path + event.file.name, "wb") as out:
+        # await download_file(
+        #     event.client, event.document, out, progress_callback=progress_bar
+        # )
+    path = await client.download_media(event)
+    print(path)
+    await client.download_media(event)
     await msg.edit("#done")
 
 

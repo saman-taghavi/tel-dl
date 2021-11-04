@@ -1,5 +1,5 @@
 #!/bin/bash
-PID=$(ps aux | grep 'example.py' | grep -v grep | awk {'print $2'} | xargs)
+PID=$(ps aux | grep 'test.py' | grep -v grep | awk {'print $2'} | xargs)
 if [ "$PID" != "" ]
 then
 kill -9 $PID
