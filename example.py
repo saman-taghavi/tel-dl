@@ -10,7 +10,7 @@ from os import listdir
 from os.path import isfile, join
 import shutil
 from dotenv import load_dotenv
-
+import bot_replies  
 load_dotenv()
 api_id: int = os.getenv("api_id")
 api_hash: str = os.getenv("api_hash")
@@ -37,9 +37,6 @@ current_download = {}
 
 @client.on(events.NewMessage())
 async def download(event):
-
-    print(event.text, sep="\n \n")
-    print(event.stringify(), sep="\n ok \n")
     document = event.document
     name = None
     if event.document:
@@ -54,8 +51,8 @@ async def download(event):
         if name not in list(current_download) and name not in list(downloaded_files):
             #  if file is new down load it 
             await download_manager(event, name)
-        elif name in downloaded_files : await event.reply("downloaded")
-        else: await event.reply("already downloading")
+        elif name in downloaded_files : await event.reply(bot_replies.download['downloaded'])
+        else: await event.reply(bot_replies.download["already downloading"])
 
 
 @client.on(events.NewMessage(pattern="/space"))
@@ -79,12 +76,7 @@ async def get_status(event):
             "".join(["{0} = {1} \n".format(k, v) for k, v in current_download.items()])
         )
     else:
-        await event.respond(
-            """
-        دانلود ها تمام شده است
-لیست فایل های موجود👇🏻
-        """
-        )
+        await event.respond(bot_replies.download['see files'])
         onlyfiles = [
             f for f in listdir(download_path) if isfile(join(download_path, f))
         ]
