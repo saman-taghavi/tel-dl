@@ -51,14 +51,17 @@ async def download(event):
         downloaded_files = [
             f for f in listdir(download_path) if isfile(join(download_path, f))
         ]
-        if name not in current_download and name not in downloaded_files:
+        if name not in list(current_download) and name not in list(downloaded_files):
+            #  if file is new down load it 
             await download_manager(event, name)
-        else:
-            await event.reply("already downloading")
+        elif name in downloaded_files : await event.reply("downloaded")
+        else: await event.reply("already downloading")
 
 
 @client.on(events.NewMessage(pattern="/space"))
 async def get_space(event):
+    # show disk space info
+    # a fucntion to check availabel space is good too
     total, used, free = shutil.disk_usage("/")
     await event.reply(
         f"free space: {free // (1000**2)} MB | used space: {used  // (1000**2)} MB | total space: {total // (1000**2)} MB "
@@ -67,17 +70,24 @@ async def get_space(event):
 
 @client.on(events.NewMessage(pattern="/status"))
 async def get_status(event):
+    # show info about current downloads or downloaded files
     if current_download:
-        for file , percent in current_download.items():
-                if percent == '100%':
-                    current_download.pop(file)
-        await event.respond(''.join(['{0} = {1} \n'.format(k, v) for k,v in current_download.items()]))
+        for file, percent in list(current_download.items()):
+            if percent == "100%":
+                current_download.pop(file)
+        await event.respond(
+            "".join(["{0} = {1} \n".format(k, v) for k, v in current_download.items()])
+        )
     else:
-        await event.respond('''
+        await event.respond(
+            """
         دانلود ها تمام شده است
 لیست فایل های موجود👇🏻
-        ''')
-        onlyfiles = [f for f in listdir(download_path) if isfile(join(download_path, f))]
+        """
+        )
+        onlyfiles = [
+            f for f in listdir(download_path) if isfile(join(download_path, f))
+        ]
         # mak this output better using stickers or emojies
         await event.respond("\n".join(onlyfiles))
 
