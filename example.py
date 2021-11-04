@@ -62,10 +62,20 @@ async def get_space(event):
 
 @client.on(events.NewMessage(pattern="/status"))
 async def get_status(event):
-    for file , percent in current_download.items():
-            if percent == '100%':
-                current_download.pop(file)
-    await event.respond(''.join(['{0} = {1} \n'.format(k, v) for k,v in current_download.items()]))
+    if current_download:
+        for file , percent in current_download.items():
+                if percent == '100%':
+                    current_download.pop(file)
+        await event.respond(''.join(['{0} = {1} \n'.format(k, v) for k,v in current_download.items()]))
+    else:
+        await event.respond('''
+        دانلود ها تمام شده است
+لیست فایل های موجود👇🏻
+        ''')
+        onlyfiles = [f for f in listdir(download_path) if isfile(join(download_path, f))]
+        # mak this output better using stickers or emojies
+        await event.respond('\n'.join(onlyfiles))
+    
 
 
 client.run_until_disconnected()
