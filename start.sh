@@ -1,5 +1,5 @@
 #!/bin/bash
-source  /home/ubuntu/Projects/tel-dl/.venv/bin/activate
+source  venv/bin/activate
 PID=$(ps aux | grep 'example.py' | grep -v grep | awk {'print $2'} | xargs)
 if [ "$PID" != "" ]
 then
@@ -10,4 +10,4 @@ echo "Restarting FastAPI server"
 else
 echo "No such process. Starting new FastAPI server"
 fi
-nohup python /home/ubuntu/Projects/tel-dl/example.py  > bot_output.log &
+nohup python example.py  > bot_output.txt &
