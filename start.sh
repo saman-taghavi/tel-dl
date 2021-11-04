@@ -6,8 +6,8 @@ then
 kill -9 $PID
 sleep 2
 echo "" > nohup.out
-echo "Restarting FastAPI server"
+echo "Restarting tel-dl server"
 else
-echo "No such process. Starting new FastAPI server"
+echo "No such process. Starting new tel-dl server"
 fi
 nohup python example.py  > bot_output.txt &
