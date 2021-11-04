@@ -6,6 +6,8 @@ from telethon.tl import types
 
 from FastTelethon import download_file, upload_file
 import os
+from os import listdir
+from os.path import isfile, join
 import shutil
 from dotenv import load_dotenv
 
@@ -14,6 +16,7 @@ api_id: int = os.getenv("api_id")
 api_hash: str = os.getenv("api_hash")
 token = os.getenv("token")
 client = TelegramClient("bot", api_id, api_hash)
+download_path = 'downloads/'
 
 client.start(bot_token=token)
 
@@ -36,11 +39,14 @@ current_download = {}
 
 @client.on(events.NewMessage())
 async def download_or_upload(event):
-    msg = None
-    async def progress_bar(current, total):
-        current_download[name] = "{:.0f}%".format(current * 100 / total)
-    
+    # print(event.stringify())
+    document = event.document
+    print('dox->',document)
     if event.document:
+        async def progress_bar(current, total):
+            current_download[name] = "{:.0f}%".format(current * 100 / total)
+      
+        print(event.document.attributes)
         name = event.document.attributes[0].file_name
         if name not in current_download:
             msg = await event.reply("#downloading")
