@@ -1,5 +1,4 @@
 #!/bin/bash
-source  venv/bin/activate
 PID=$(ps aux | grep 'example.py' | grep -v grep | awk {'print $2'} | xargs)
 if [ "$PID" != "" ]
 then
