@@ -10,4 +10,4 @@ echo "Restarting tel-dl server"
 else
 echo "No such process. Starting new tel-dl server"
 fi
-nohup python example.py  > bot_output.txt &
+nohup python  -u  example.py  > bot_output.log  2> bot_error.log  &
