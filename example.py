@@ -16,8 +16,7 @@ api_id: int = os.getenv("api_id")
 api_hash: str = os.getenv("api_hash")
 token = os.getenv("token")
 client = TelegramClient("bot", api_id, api_hash)
-download_path = 'downloads/'
-
+download_path = "downloads/"
 client.start(bot_token=token)
 
 
@@ -36,26 +35,26 @@ class Timer:
 current_download = {}
 
 
-
 @client.on(events.NewMessage())
-async def download_or_upload(event):
-    # print(event.stringify())
+async def download(event):
+
+    print(event.text, sep="\n \n")
+    print(event.stringify(), sep="\n ok \n")
     document = event.document
-    print('dox->',document)
+    name = None
     if event.document:
-        async def progress_bar(current, total):
-            current_download[name] = "{:.0f}%".format(current * 100 / total)
-      
-        print(event.document.attributes)
-        name = event.document.attributes[0].file_name
-        if name not in current_download:
-            msg = await event.reply("#downloading")
-            with open("downloads/" + event.file.name, "wb") as out:
-                await download_file(
-                    event.client, event.document, out, progress_callback=progress_bar
-                )
-            await msg.edit("#done")
-        else : await event.reply("already downloading")
+        for item in document.attributes:
+            name = getattr(item, "file_name", None)
+    if name:
+
+        # check downloaded files in directory
+        downloaded_files = [
+            f for f in listdir(download_path) if isfile(join(download_path, f))
+        ]
+        if name not in current_download and name not in downloaded_files:
+            await download_manager(event, name)
+        else:
+            await event.reply("already downloading")
 
 
 @client.on(events.NewMessage(pattern="/space"))
@@ -80,8 +79,19 @@ async def get_status(event):
         ''')
         onlyfiles = [f for f in listdir(download_path) if isfile(join(download_path, f))]
         # mak this output better using stickers or emojies
-        await event.respond('\n'.join(onlyfiles))
-    
+        await event.respond("\n".join(onlyfiles))
+
+
+async def download_manager(event, name):
+    async def progress_bar(current, total):
+        current_download[name] = "{:.0f}%".format(current * 100 / total)
+
+    msg = await event.reply("#downloading")
+    with open(download_path + event.file.name, "wb") as out:
+        await download_file(
+            event.client, event.document, out, progress_callback=progress_bar
+        )
+    await msg.edit("#done")
 
 
 client.run_until_disconnected()
