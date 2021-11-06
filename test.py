@@ -89,6 +89,12 @@ async def worker(name):
         file_name = queue_item[2]
         file_path = tmp_path
         file_path = os.path.join(file_path, file_name)
+        # check disk space
+        total, used, free = shutil.disk_usage("/")
+        free = free // (1000**3)
+        if free < 2 :
+            await  update.reply("less than 2 GB is left free some space")
+            return
         # if file is downloaded or being downloaded tell the user
         if file_name in downloaded_files:
             await reply.edit("file is already downloaded")
