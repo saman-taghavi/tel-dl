@@ -134,3 +134,4 @@ bot.session-journal
 bot.session
 bot.session-journal
 tg_downloader.session
+tg_downloader.session-journal
