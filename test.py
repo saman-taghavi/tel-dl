@@ -5,6 +5,8 @@ import pytz
 from datetime import datetime
 import time
 import asyncio
+from os import listdir
+from os.path import isfile, join
 
 # Import the client
 from telethon import TelegramClient, events
@@ -60,6 +62,8 @@ tz = pytz.timezone("Asia/Tehran")
 # Create a queue that we will use to store our downloads.
 queue = asyncio.Queue()
 
+# queue files
+queue_file_names = []
 # Create tmp path to store downloads until completed
 tmp_path = os.path.join(download_path, "tmp")
 os.makedirs(tmp_path, exist_ok=True)
@@ -68,13 +72,26 @@ os.makedirs(tmp_path, exist_ok=True)
 async def worker(name):
     while True:
         # Get a "work item" out of the queue.
+        downloaded_files = [
+            f for f in listdir(download_path) if isfile(join(download_path, f))
+        ]
+        tmp_downloaded_files = [
+            f for f in listdir(tmp_path) if isfile(join(tmp_path, f))
+        ]
+        print(f'{downloaded_files=}')
+        print(f'{tmp_downloaded_files=}')
         queue_item = await queue.get()
         update = queue_item[0]
         reply = queue_item[1]
         file_name = queue_item[2]
         file_path = tmp_path
         file_path = os.path.join(file_path, file_name)
-
+        if file_name in downloaded_files:
+            await reply.edit("file is already downloaded")
+            return
+        if file_name in file_name in tmp_downloaded_files:
+            await reply.edit("file is downloading")
+            return
         await reply.edit("Downloading...")
         # convert time to ir local using pytz
         print(
@@ -144,6 +161,11 @@ async def handler(update):
         for attr in attributes:
             if isinstance(attr, types.DocumentAttributeFilename):
                 file_name = attr.file_name
+                if file_name in queue_file_names:
+                    # if file is in queue don't go further than this
+                    await update.reply("file is in queue")
+                    return
+                queue_file_names.append(file_name)
                 # maybe also check here if we have the file in queue or on disk or file is downloading
         print(
             "[%s] Download queued at %s"
