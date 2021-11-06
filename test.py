@@ -7,6 +7,7 @@ import time
 import asyncio
 from os import listdir
 from os.path import isfile, join
+import bot_replies  
 
 # Import the client
 from telethon import TelegramClient, events
@@ -63,7 +64,9 @@ tz = pytz.timezone("Asia/Tehran")
 queue = asyncio.Queue()
 
 # queue files
-queue_file_names = []
+queue_files = {}
+#download detail on downloading files
+download_detail = True
 # Create tmp path to store downloads until completed
 tmp_path = os.path.join(download_path, "tmp")
 os.makedirs(tmp_path, exist_ok=True)
@@ -86,6 +89,7 @@ async def worker(name):
         file_name = queue_item[2]
         file_path = tmp_path
         file_path = os.path.join(file_path, file_name)
+        # if file is downloaded or being downloaded tell the user
         if file_name in downloaded_files:
             await reply.edit("file is already downloaded")
             return
@@ -98,14 +102,19 @@ async def worker(name):
             "[%s] Download started at %s" % (file_name, datetime.now(tz).strftime(fmt))
         )
         try:
+            async def progress_bar(current, total):
+                percentage =  "{:.0f}%".format(current * 100 / total)
+                if (queue_files[file_name] != percentage) and download_detail:
+                    await reply.edit(f"{percentage}%")
+                queue_files[file_name] = percentage
             loop = asyncio.get_event_loop()
             # and use the call back for progress of download
-            task = loop.create_task(client.download_media(update.message, file_path))
+            task = loop.create_task(client.download_media(update.message, file_path,progress_callback=progress_bar))
             # here we wait for the download to finish as function is async so no problem here
             download_result = await asyncio.wait_for(
                 task, timeout=maximum_seconds_per_download
             )
-            #  format time to ir local here
+            queue_files.pop(file_name)
             end_time = datetime.now(tz).strftime(fmt)
             _, filename = os.path.split(download_result)
             final_path = os.path.join(download_path, filename)
@@ -161,11 +170,11 @@ async def handler(update):
         for attr in attributes:
             if isinstance(attr, types.DocumentAttributeFilename):
                 file_name = attr.file_name
-                if file_name in queue_file_names:
+                if file_name in list(queue_files):
                     # if file is in queue don't go further than this
                     await update.reply("file is in queue")
                     return
-                queue_file_names.append(file_name)
+                queue_files[file_name] = 0
                 # maybe also check here if we have the file in queue or on disk or file is downloading
         print(
             "[%s] Download queued at %s"
@@ -174,7 +183,20 @@ async def handler(update):
         reply = await update.reply("In queue")
         await queue.put([update, reply, file_name])
 
+@events.register(events.NewMessage(pattern="/status"))
+async def get_status(update):
+    if queue_files:
+        await update.respond(
+            "".join(["{0} = {1} \n".format(k, v) for k, v in queue_files.items()])
+        )
 
+    else:
+        await update.respond(bot_replies.download['see files'])
+        onlyfiles = [
+            f for f in listdir(download_path) if isfile(join(download_path, f))
+        ]
+        # mak this output better using stickers or emojies
+        await update.respond("\n".join(onlyfiles))
 try:
     # Create worker tasks to process the queue concurrently.
     tasks = []
@@ -187,6 +209,7 @@ try:
     client.start(bot_token=str(bot_token))
     # Register the update handler so that it gets called
     client.add_event_handler(handler)
+    client.add_event_handler(get_status)
 
     # Run the client until Ctrl+C is pressed, or the client disconnects
     print("Successfully started (Press Ctrl+C to stop)")
