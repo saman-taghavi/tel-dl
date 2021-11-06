@@ -105,7 +105,7 @@ async def worker(name):
             async def progress_bar(current, total):
                 percentage =  "{:.0f}%".format(current * 100 / total)
                 if (queue_files[file_name] != percentage) and download_detail:
-                    await reply.edit(f"{percentage}%")
+                    await reply.edit(f"{percentage}")
                 queue_files[file_name] = percentage
             loop = asyncio.get_event_loop()
             # and use the call back for progress of download
@@ -197,6 +197,13 @@ async def get_status(update):
         ]
         # mak this output better using stickers or emojies
         await update.respond("\n".join(onlyfiles))
+@events.register(events.NewMessage(pattern="/detail"))
+async def get_details(update):
+   global download_detail
+   download_detail ^= True
+   await update.respond(f'{download_detail}')
+
+
 try:
     # Create worker tasks to process the queue concurrently.
     tasks = []
@@ -210,6 +217,7 @@ try:
     # Register the update handler so that it gets called
     client.add_event_handler(handler)
     client.add_event_handler(get_status)
+    client.add_event_handler(get_details)
 
     # Run the client until Ctrl+C is pressed, or the client disconnects
     print("Successfully started (Press Ctrl+C to stop)")
