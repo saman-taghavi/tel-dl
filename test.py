@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os
+import os , shutil
 import sys
 import pytz
 from datetime import datetime
@@ -161,10 +161,12 @@ client = TelegramClient(
 # This is our update handler. It is called when a new update arrives.
 # Register `events.NewMessage` before defining the client.
 @events.register(events.NewMessage)
-async def handler(update):
+async def downloader(update):
     if debug_enabled:
         print(update)
-    if update.message.media:
+    total, used, free = shutil.disk_usage("/")
+    free = free // (1000**3)
+    if update.message.media and free > 2:
         file_name = "unknown name"
         attributes = update.message.media.document.attributes
         for attr in attributes:
@@ -182,6 +184,7 @@ async def handler(update):
         )
         reply = await update.reply("In queue")
         await queue.put([update, reply, file_name])
+    else : await update.reply("less than 2 GB is left free some space")
 
 @events.register(events.NewMessage(pattern="/status"))
 async def get_status(update):
@@ -202,6 +205,15 @@ async def get_details(update):
    global download_detail
    download_detail ^= True
    await update.respond(f'{download_detail}')
+@events.register(events.NewMessage(pattern="/space"))
+async def get_space(event):
+    # show disk space info
+    # a fucntion to check availabel space is good too
+    total, used, free = shutil.disk_usage("/")
+    await event.reply(
+        f"free space: {free // (1000**3)} GB | used space: {used  // (1000**3)} GB | total space: {total // (1000**3)} GB "
+    )
+
 
 
 try:
@@ -215,9 +227,10 @@ try:
     # Start client with TG_BOT_TOKEN string
     client.start(bot_token=str(bot_token))
     # Register the update handler so that it gets called
-    client.add_event_handler(handler)
+    client.add_event_handler(downloader)
     client.add_event_handler(get_status)
     client.add_event_handler(get_details)
+    client.add_event_handler(get_space)
 
     # Run the client until Ctrl+C is pressed, or the client disconnects
     print("Successfully started (Press Ctrl+C to stop)")
