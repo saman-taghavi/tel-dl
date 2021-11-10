@@ -10,7 +10,7 @@ from os.path import isfile, join
 import bot_replies  
 
 # Import the client
-from telethon import TelegramClient, events
+from telethon import TelegramClient, events, connection
 from telethon.tl import types
 
 # Enable logging
@@ -41,6 +41,9 @@ api_hash = get_env("TG_API_HASH", "Enter your API hash: ")
 bot_token = get_env("TG_BOT_TOKEN", "Enter your Telegram BOT token: ")
 download_path = get_env("TG_DOWNLOAD_PATH", "Enter full path to downloads directory: ")
 debug_enabled = "DEBUG_ENABLED" in os.environ
+server = os.environ.get("server", None)
+port = int(os.environ.get("port", None))
+secret = os.environ.get("secret", None)
 if debug_enabled:
     logging.basicConfig(
         format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s",
@@ -54,7 +57,7 @@ else:
 
 number_of_parallel_downloads = int(os.environ.get("TG_MAX_PARALLEL", 4))
 maximum_seconds_per_download = int(os.environ.get("TG_DL_TIMEOUT", 3600))
-proxy = None  # https://github.com/Anorov/PySocks
+proxy =  (server,port,secret)  # https://github.com/Anorov/PySocks
 
 # date format
 fmt = "%Y-%m-%d %H:%M:%S"
@@ -162,6 +165,7 @@ client = TelegramClient(
     proxy=proxy,
     request_retries=10,
     flood_sleep_threshold=120,
+    connection=connection.ConnectionTcpMTProxyRandomizedIntermediate,
 )
 
 # This is our update handler. It is called when a new update arrives.
