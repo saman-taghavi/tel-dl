@@ -178,30 +178,29 @@ client = TelegramClient(
 
 # This is our update handler. It is called when a new update arrives.
 # Register `events.NewMessage` before defining the client.
-@events.register(events.NewMessage)
+@events.register(events.NewMessage(func=lambda e: e.message.media))
 async def downloader(update):
     if debug_enabled:
         print(update)
     total, used, free = shutil.disk_usage("/")
     free = free // (1000 ** 3)
-    if update.message.media and free > 2:
-        file_name = "unknown name"
-        attributes = update.message.media.document.attributes
-        for attr in attributes:
-            if isinstance(attr, types.DocumentAttributeFilename):
-                file_name = attr.file_name
-                if file_name in list(queue_files):
-                    # if file is in queue don't go further than this
-                    await update.reply("file is in queue")
-                    return
-                queue_files[file_name] = 0
-                # maybe also check here if we have the file in queue or on disk or file is downloading
-        print(
-            "[%s] Download queued at %s"
-            % (file_name, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-        )
-        reply = await update.reply("In queue")
-        await queue.put([update, reply, file_name])
+    file_name = "unknown name"
+    attributes = update.message.media.document.attributes
+    for attr in attributes:
+        if isinstance(attr, types.DocumentAttributeFilename):
+            file_name = attr.file_name
+            if file_name in list(queue_files):
+                # if file is in queue don't go further than this
+                await update.reply("file is in queue")
+                return
+            queue_files[file_name] = 0
+            # maybe also check here if we have the file in queue or on disk or file is downloading
+    print(
+        "[%s] Download queued at %s"
+        % (file_name, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    )
+    reply = await update.reply("In queue")
+    await queue.put([update, reply, file_name])
     elif free < 2:
         await update.reply("less than 2 GB is left free some space")
 
