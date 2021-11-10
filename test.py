@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os , shutil
+import os, shutil
 import sys
 import pytz
 from datetime import datetime
@@ -7,7 +7,7 @@ import time
 import asyncio
 from os import listdir
 from os.path import isfile, join
-import bot_replies  
+import bot_replies
 
 # Import the client
 from telethon import TelegramClient, events, connection
@@ -68,7 +68,7 @@ queue = asyncio.Queue()
 
 # queue files
 queue_files = {}
-#download detail on downloading files
+# download detail on downloading files
 download_detail = True
 # Create tmp path to store downloads until completed
 tmp_path = os.path.join(download_path, "tmp")
@@ -84,8 +84,8 @@ async def worker(name):
         tmp_downloaded_files = [
             f for f in listdir(tmp_path) if isfile(join(tmp_path, f))
         ]
-        print(f'{downloaded_files=}')
-        print(f'{tmp_downloaded_files=}')
+        print(f"{downloaded_files=}")
+        print(f"{tmp_downloaded_files=}")
         queue_item = await queue.get()
         update = queue_item[0]
         reply = queue_item[1]
@@ -94,9 +94,11 @@ async def worker(name):
         file_path = os.path.join(file_path, file_name)
         # check disk space
         total, used, free = shutil.disk_usage("/")
-        free = free // (1000**3)
-        if free < 2 :
-            await  update.reply("less than 2 GB is left free some space")
+        free = free // (1000 ** 3)
+        print(f"frees space = {free}")
+        print(f"{queue_files=}")
+        if free < 20:
+            await update.reply("less than 2 GB is left free some space")
             return
         # if file is downloaded or being downloaded tell the user
         if file_name in downloaded_files:
@@ -111,14 +113,20 @@ async def worker(name):
             "[%s] Download started at %s" % (file_name, datetime.now(tz).strftime(fmt))
         )
         try:
+
             async def progress_bar(current, total):
-                percentage =  "{:.0f}%".format(current * 100 / total)
+                percentage = "{:.0f}%".format(current * 100 / total)
                 if (queue_files[file_name] != percentage) and download_detail:
                     await reply.edit(f"{percentage}")
                 queue_files[file_name] = percentage
+
             loop = asyncio.get_event_loop()
             # and use the call back for progress of download
-            task = loop.create_task(client.download_media(update.message, file_path,progress_callback=progress_bar))
+            task = loop.create_task(
+                client.download_media(
+                    update.message, file_path, progress_callback=progress_bar
+                )
+            )
             # here we wait for the download to finish as function is async so no problem here
             download_result = await asyncio.wait_for(
                 task, timeout=maximum_seconds_per_download
@@ -175,7 +183,7 @@ async def downloader(update):
     if debug_enabled:
         print(update)
     total, used, free = shutil.disk_usage("/")
-    free = free // (1000**3)
+    free = free // (1000 ** 3)
     if update.message.media and free > 2:
         file_name = "unknown name"
         attributes = update.message.media.document.attributes
@@ -194,7 +202,9 @@ async def downloader(update):
         )
         reply = await update.reply("In queue")
         await queue.put([update, reply, file_name])
-    else : await update.reply("less than 2 GB is left free some space")
+    elif free < 2:
+        await update.reply("less than 2 GB is left free some space")
+
 
 @events.register(events.NewMessage(pattern="/status"))
 async def get_status(update):
@@ -204,17 +214,21 @@ async def get_status(update):
         )
 
     else:
-        await update.respond(bot_replies.download['see files'])
+        await update.respond(bot_replies.download["see files"])
         onlyfiles = [
             f for f in listdir(download_path) if isfile(join(download_path, f))
         ]
         # mak this output better using stickers or emojies
         await update.respond("\n".join(onlyfiles))
+
+
 @events.register(events.NewMessage(pattern="/detail"))
 async def get_details(update):
-   global download_detail
-   download_detail ^= True
-   await update.respond(f'{download_detail}')
+    global download_detail
+    download_detail ^= True
+    await update.respond(f"{download_detail}")
+
+
 @events.register(events.NewMessage(pattern="/space"))
 async def get_space(event):
     # show disk space info
@@ -223,7 +237,6 @@ async def get_space(event):
     await event.reply(
         f"free space: {free // (1000**3)} GB | used space: {used  // (1000**3)} GB | total space: {total // (1000**3)} GB "
     )
-
 
 
 try:
