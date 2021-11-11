@@ -55,10 +55,11 @@ else:
         level=logging.ERROR,
     )
 
-number_of_parallel_downloads = int(os.environ.get("TG_MAX_PARALLEL", 4))
+number_of_parallel_downloads = int(os.environ.get("TG_MAX_PARALLELF", 4))
 maximum_seconds_per_download = int(os.environ.get("TG_DL_TIMEOUT", 3600))
-proxy = (server, port, secret)  # https://github.com/Anorov/PySocks
-
+if port and server and secret:
+    proxy = (server, port, secret)  # https://github.com/Anorov/PySocks
+else : proxy = None
 # date format
 fmt = "%Y-%m-%d %H:%M:%S"
 tz = pytz.timezone("Asia/Tehran")
