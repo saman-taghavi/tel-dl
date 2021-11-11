@@ -110,19 +110,19 @@ async def worker(name):
 
         try:
             if free < 20:
-                await task_messenger("less than 2 GB is left free some space",update)
-                print('not free space')
+                await task_messenger("less than 2 GB is left free some space", update)
+                print("not free space")
 
-            # if file is downloaded or being downloaded tell the user
-            elif file_name in downloaded_files:
-                await task_messenger("file is already downloaded",update)
-                print('in Downloaded')
+            # # if file is downloaded or being downloaded tell the user
+            # elif file_name in downloaded_files:
+            #     await task_messenger("file is already downloaded", update)
+            #     print("in Downloaded")
 
-            elif file_name in file_name in tmp_downloaded_files:
-                await task_messenger("file is downloading",update)
-                print('in Temp')
+            # elif file_name in file_name in tmp_downloaded_files:
+            #     await task_messenger("file is downloading", update)
+            #     print("in Temp")
             else:
-                print('Downloading')
+                print("Downloading")
                 await reply.edit("Downloading...")
                 # convert time to ir local using pytz
                 print(
@@ -162,7 +162,10 @@ async def worker(name):
         except asyncio.TimeoutError:
             print(
                 "[%s] Timeout reached at %s"
-                % (file_name, time.strftime("%Y-%m-%d %H:%M:%S", datetime.now(tz).strftime(fmt)))
+                % (
+                    file_name,
+                    time.strftime("%Y-%m-%d %H:%M:%S", datetime.now(tz).strftime(fmt)),
+                )
             )
             await reply.edit("Error!")
             message = await update.reply("ERROR: Timeout reached downloading this file")
@@ -171,7 +174,10 @@ async def worker(name):
             # print("[%s]: %s" % (e.__class__.__name__, str(e)))
             print(
                 "[%s] Exception at %s"
-                % (file_name, time.strftime("%Y-%m-%d %H:%M:%S", datetime.now(tz).strftime(fmt)))
+                % (
+                    file_name,
+                    time.strftime("%Y-%m-%d %H:%M:%S", datetime.now(tz).strftime(fmt)),
+                )
             )
             await reply.edit("Error!")
             message = await update.reply(
@@ -197,8 +203,9 @@ client = TelegramClient(
 # Register `events.NewMessage` before defining the client.
 @events.register(events.NewMessage(func=lambda e: e.message.media))
 async def downloader(update):
-    if debug_enabled:
-        print(update)
+    print(tasks, "\n")
+    # if debug_enabled:
+    #     print(update)
     total, used, free = shutil.disk_usage("/")
     free = free // (1000 ** 3)
     file_name = "unknown name"
@@ -214,8 +221,10 @@ async def downloader(update):
             # maybe also check here if we have the file in queue or on disk or file is downloading
     print(
         "[%s] Download queued at %s"
-        % (file_name, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+        % (file_name, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())),
+        "\n",
     )
+
     reply = await update.reply("In queue")
     await queue.put([update, reply, file_name])
 
@@ -260,7 +269,7 @@ try:
         loop = asyncio.get_event_loop()
         task = loop.create_task(worker(f"worker-{i}"))
         tasks.append(task)
-
+    print(tasks)
     # Start client with TG_BOT_TOKEN string
     client.start(bot_token=str(bot_token))
     # Register the update handler so that it gets called
