@@ -41,9 +41,9 @@ api_hash = get_env("TG_API_HASH", "Enter your API hash: ")
 bot_token = get_env("TG_BOT_TOKEN", "Enter your Telegram BOT token: ")
 download_path = get_env("TG_DOWNLOAD_PATH", "Enter full path to downloads directory: ")
 debug_enabled = "DEBUG_ENABLED" in os.environ
-server = os.environ.get("server", None)
-port = int(os.environ.get("port", None))
-secret = os.environ.get("secret", None)
+# server = os.environ.get("server", None)
+# port = int(os.environ.get("port", None))
+# secret = os.environ.get("secret", None)
 if debug_enabled:
     logging.basicConfig(
         format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s",
@@ -57,9 +57,10 @@ else:
 
 number_of_parallel_downloads = int(os.environ.get("TG_MAX_PARALLELF", 4))
 maximum_seconds_per_download = int(os.environ.get("TG_DL_TIMEOUT", 3600))
-if port and server and secret:
-    proxy = (server, port, secret)  # https://github.com/Anorov/PySocks
-else : proxy = None
+# if port and server and secret:
+    # proxy = (server, port, secret)  # https://github.com/Anorov/PySocks
+# else : proxy = None
+proxy = None
 # date format
 fmt = "%Y-%m-%d %H:%M:%S"
 tz = pytz.timezone("Asia/Tehran")
@@ -86,109 +87,45 @@ async def task_messenger(message: str, update: tl.custom.message.Message):
 
 async def worker(name):
     while True:
-        print(f"{name=}")
-        print(queue)
         # Get a "work item" out of the queue.
-        downloaded_files = [
-            f for f in listdir(download_path) if isfile(join(download_path, f))
-        ]
-        tmp_downloaded_files = [
-            f for f in listdir(tmp_path) if isfile(join(tmp_path, f))
-        ]
-        # print(f"{downloaded_files=}")
-        # print(f"{tmp_downloaded_files=}")
         queue_item = await queue.get()
         update = queue_item[0]
-        reply = queue_item[1]
-        file_name = queue_item[2]
-        file_path = tmp_path
-        file_path = os.path.join(file_path, file_name)
-        # check disk space
-        total, used, free = shutil.disk_usage("/")
-        free = free // (1000 ** 3)
-        # print(f"frees space = {free}")
-        # print(f"{queue_files=}")
+        message = queue_item[1]
 
+        file_path = tmp_path;
+        file_name = 'unknown name';
+        attributes = update.message.media.document.attributes
+        for attr in attributes:
+            if isinstance(attr, tl.types.DocumentAttributeFilename):
+                file_name = attr.file_name
+                file_path = os.path.join(file_path, attr.file_name)
+        await message.edit('Downloading...')
+        print("[%s] Download started at %s" % (file_name, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
         try:
-            if free < 20:
-                await task_messenger("less than 2 GB is left free some space", update)
-                print("not free space")
-
-            # # if file is downloaded or being downloaded tell the user
-            # elif file_name in downloaded_files:
-            #     await task_messenger("file is already downloaded", update)
-            #     print("in Downloaded")
-
-            # elif file_name in file_name in tmp_downloaded_files:
-            #     await task_messenger("file is downloading", update)
-            #     print("in Temp")
-            else:
-                print("Downloading")
-                await reply.edit("Downloading...")
-                # convert time to ir local using pytz
-                print(
-                    "[%s] Download started at %s"
-                    % (file_name, datetime.now(tz).strftime(fmt))
-                )
-
-                # i can move this out with a simpler function which pases more data to this
-                async def progress_bar(current, total):
-                    percentage = "{:.0f}%".format(current * 100 / total)
-                    if (queue_files[file_name] != percentage) and download_detail:
-                        await reply.edit(f"{percentage}")
-                    queue_files[file_name] = percentage
-
-                loop = asyncio.get_event_loop()
-                # and use the call back for progress of download
-                task = loop.create_task(
-                    client.download_media(
-                        update.message, file_path, progress_callback=progress_bar
-                    )
-                )
-                # here we wait for the download to finish as function is async so no problem here
-                download_result = await asyncio.wait_for(task, timeout=3)
-                queue_files.pop(file_name)
-                end_time = datetime.now(tz).strftime(fmt)
-                _, filename = os.path.split(download_result)
-                final_path = os.path.join(download_path, filename)
-                # this moves the file
-                os.rename(download_result, final_path)
-                print(
-                    "[%s] Successfully downloaded to %s at %s"
-                    % (file_name, final_path, end_time)
-                )
-                await reply.edit("Finished at %s" % (end_time))
-                queue.task_done()
-
+            loop = asyncio.get_event_loop()
+            task = loop.create_task(client.download_media(update.message, file_path))
+            download_result = await asyncio.wait_for(task, timeout=maximum_seconds_per_download)
+            end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            end_time_short = time.strftime("%H:%M", time.localtime())
+            # os.chown(download_result, int(user_id), int(group_id))
+            _,filename = os.path.split(download_result)
+            final_path = os.path.join(download_path,filename)
+            os.rename(download_result,final_path)
+            print("[%s] Successfully downloaded to %s at %s" % (file_name, final_path, end_time))
+            await message.edit('Finished at %s' %(end_time_short))
         except asyncio.TimeoutError:
-            print(
-                "[%s] Timeout reached at %s"
-                % (
-                    file_name,
-                    time.strftime("%Y-%m-%d %H:%M:%S", datetime.now(tz).strftime(fmt)),
-                )
-            )
-            await reply.edit("Error!")
-            message = await update.reply("ERROR: Timeout reached downloading this file")
+            print("[%s] Timeout reached at %s" % (file_name, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+            await message.edit('Error!')
+            message = await update.reply('ERROR: Timeout reached downloading this file')
         except Exception as e:
             print("[EXCEPTION]: %s" % (str(e)))
-            # print("[%s]: %s" % (e.__class__.__name__, str(e)))
-            print(
-                "[%s] Exception at %s"
-                % (
-                    file_name,
-                    time.strftime("%Y-%m-%d %H:%M:%S", datetime.now(tz).strftime(fmt)),
-                )
-            )
-            await reply.edit("Error!")
-            message = await update.reply(
-                "ERROR: Exception %s raised downloading this file: %s"
-                % (e.__class__.__name__, str(e))
-            )
+            #print("[%s]: %s" % (e.__class__.__name__, str(e)))
+            print("[%s] Exception at %s" % (file_name, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+            await message.edit('Error!')
+            message = await update.reply('ERROR: Exception %s raised downloading this file: %s' % (e.__class__.__name__, str(e)))
 
-            # Notify the queue that the "work item" has been processed.
+        # Notify the queue that the "work item" has been processed.
         queue.task_done()
-
 
 client = TelegramClient(
     session,
@@ -197,7 +134,6 @@ client = TelegramClient(
     proxy=proxy,
     request_retries=10,
     flood_sleep_threshold=120,
-    connection=connection.ConnectionTcpMTProxyRandomizedIntermediate,
 )
 
 # This is our update handler. It is called when a new update arrives.
