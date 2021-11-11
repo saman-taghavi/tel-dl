@@ -91,17 +91,13 @@ async def worker(name):
         queue_item = await queue.get()
         update = queue_item[0]
         message = queue_item[1]
-
-        file_path = tmp_path;
-        file_name = 'unknown name';
-        attributes = update.message.media.document.attributes
-        for attr in attributes:
-            if isinstance(attr, tl.types.DocumentAttributeFilename):
-                file_name = attr.file_name
-                file_path = os.path.join(file_path, attr.file_name)
-        await message.edit('Downloading...')
-        print("[%s] Download started at %s" % (file_name, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+        file_name =  queue_item[2]
+        file_path = tmp_path
+        file_path = os.path.join(file_path, file_name)
         try:
+
+            await message.edit('Downloading...')
+            print("[%s] Download started at %s" % (file_name, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
             loop = asyncio.get_event_loop()
             task = loop.create_task(client.download_media(update.message, file_path))
             download_result = await asyncio.wait_for(task, timeout=maximum_seconds_per_download)
