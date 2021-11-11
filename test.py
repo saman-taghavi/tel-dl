@@ -201,9 +201,6 @@ async def downloader(update):
     )
     reply = await update.reply("In queue")
     await queue.put([update, reply, file_name])
-    elif free < 2:
-        await update.reply("less than 2 GB is left free some space")
-
 
 @events.register(events.NewMessage(pattern="/status"))
 async def get_status(update):
